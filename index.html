@@ -1,1 +1,250 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Pet Companion — © Sarveen 2026</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#212121;--surface:#2f2f2f;--surface-2:#3a3a3a;--text:#ececec;--text-muted:#8e8e8e;--accent:#10a37f;--accent-hover:#0d8c6d}
+html,body{height:100%;font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg)!important;color:var(--text);overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh;max-width:820px;margin:0 auto}
+#topbar{display:flex;align-items:center;gap:.75rem;padding:.65rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(33,33,33,.95);flex-shrink:0;flex-wrap:wrap;z-index:20}
+.logo{display:flex;align-items:center;gap:.45rem;font-weight:600;font-size:.95rem}
+.status-pills{display:flex;gap:.3rem;flex:1;justify-content:center;flex-wrap:wrap}
+.pill{background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-muted);padding:.28rem .7rem;border-radius:999px;font-size:.72rem;font-weight:500;cursor:pointer}
+.pill:hover{border-color:rgba(255,255,255,.25);color:var(--text)}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(16,163,127,.35)}
+.top-actions{display:flex;gap:.3rem}
+.icon-btn{background:transparent;border:1px solid rgba(255,255,255,.12);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center}
+.icon-btn:hover{background:rgba(255,255,255,.06)}
+#chat-area{flex:1;overflow-y:auto;padding:1.5rem 1.25rem 1rem}
+.messages{display:flex;flex-direction:column;gap:1.35rem;max-width:700px;margin:0 auto;min-height:100%}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3rem 1.5rem;color:var(--text-muted);flex:1}
+.welcome .big-icon{font-size:3rem;margin-bottom:1rem}
+.welcome h2{font-size:1.35rem;font-weight:600;color:var(--text);margin-bottom:.4rem}
+.welcome p{font-size:.9rem;max-width:380px;line-height:1.5}
+.message{display:flex;gap:.85rem;animation:fadeIn .28s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.message .avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.95rem;margin-top:2px}
+.message.user .avatar{background:#5436da}
+.message.assistant .avatar{background:var(--accent)}
+.message.system{justify-content:center;color:var(--text-muted);font-size:.8rem}
+.message .content{flex:1;line-height:1.6;font-size:.94rem;padding-top:.3rem;white-space:pre-wrap}
+.message.user .content{background:var(--surface);padding:.7rem 1rem;border-radius:14px;border-top-left-radius:4px;max-width:85%}
+.typing-dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--text-muted);margin:0 2px;animation:bounce 1.2s infinite ease-in-out}
+.typing-dots span:nth-child(2){animation-delay:.15s}
+.typing-dots span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-5px);opacity:1}}
+#input-bar{padding:.7rem 1.25rem 1.15rem;background:var(--bg);flex-shrink:0}
+.input-wrapper{display:flex;align-items:flex-end;gap:.55rem;background:var(--surface);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:.55rem .75rem;max-width:700px;margin:0 auto}
+.input-wrapper:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(16,163,127,.15)}
+#user-input{flex:1;background:transparent;border:none;color:var(--text);font-size:.94rem;line-height:1.5;resize:none;outline:none;max-height:140px;padding:.25rem 0;font-family:inherit}
+#user-input::placeholder{color:var(--text-muted)}
+.send-btn{background:var(--accent);border:none;width:36px;height:36px;border-radius:11px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send-btn:hover{background:var(--accent-hover)}
+.send-btn:disabled{background:var(--surface-2);cursor:not-allowed}
+.hint-text{text-align:center;font-size:.7rem;color:var(--text-muted);margin-top:.5rem;opacity:.75}
+.pet-speech{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#fff;color:#111;font-size:11px;font-weight:600;padding:4px 8px;border-radius:8px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.3);pointer-events:none;margin-bottom:4px;opacity:0;transition:opacity .2s;font-family:"Segoe UI",system-ui,sans-serif;z-index:1}
+.pet-speech.show{opacity:1}
+.pet-speech::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#fff}
+.pet-container{position:fixed!important;width:56px!important;height:56px!important;z-index:99999!important;pointer-events:none;image-rendering:pixelated;filter:drop-shadow(0 4px 12px rgba(0,0,0,.45))}
+.pet-canvas{width:56px;height:56px;image-rendering:pixelated}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#2f2f2f;border-radius:16px;padding:1.5rem;width:90%;max-width:420px;border:1px solid #444}
+.modal h3{margin-bottom:1rem;font-size:1.1rem}
+.modal label{display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.3rem;margin-top:.8rem}
+.modal input,.modal select{width:100%;padding:.55rem .7rem;border-radius:8px;border:1px solid #555;background:#212121;color:var(--text);font-size:.9rem}
+.modal .row{display:flex;gap:.5rem;margin-top:1.2rem}
+.modal button{flex:1;padding:.6rem;border:none;border-radius:8px;font-weight:600;cursor:pointer}
+.modal .save{background:var(--accent);color:#fff}
+.modal .cancel{background:#444;color:var(--text)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="logo"><span>🐾</span><span>AI Pet Companion</span></div>
+    <div class="status-pills">
+      <button class="pill active" data-status="idle">Idle</button>
+      <button class="pill" data-status="running">Running</button>
+      <button class="pill" data-status="waiting">Needs Input</button>
+      <button class="pill" data-status="ready">Ready</button>
+      <button class="pill" data-status="blocked">Blocked</button>
+    </div>
+    <div class="top-actions">
+      <button id="settings-btn" class="icon-btn" title="API Settings">⚙️</button>
+      <button id="clear-btn" class="icon-btn" title="Clear chat">🗑️</button>
+    </div>
+  </header>
+  <main id="chat-area">
+    <div id="chat-messages" class="messages">
+      <div class="welcome" id="welcome-block">
+        <div class="big-icon">🐾</div>
+        <h2>How can I help you today?</h2>
+        <p>Click ⚙️ to add your API key, then chat. Pixel pet follows your mouse (or runs around on phone).</p>
+      </div>
+    </div>
+  </main>
+  <footer id="input-bar">
+    <div class="input-wrapper">
+      <textarea id="user-input" placeholder="Message AI Pet Companion…" rows="1"></textarea>
+      <button id="send-btn" class="send-btn" title="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      </button>
+    </div>
+    <p class="hint-text">Enter to send • Pet follows mouse / runs on phone • ⚙️ for API key<br>Copyright © Sarveen 2026</p>
+  </footer>
+</div>
+
+<div id="pet-container" class="pet-container"><div class="pet-speech" id="pet-speech"></div><canvas id="pet-canvas" class="pet-canvas" width="32" height="32"></canvas></div>
+
+<div class="modal-bg" id="settings-modal">
+  <div class="modal">
+    <h3>⚙️ AI API Settings</h3>
+    <label>Provider</label>
+    <select id="api-provider">
+      <option value="openai">OpenAI</option>
+      <option value="groq">Groq (free tier)</option>
+      <option value="openrouter">OpenRouter</option>
+      <option value="xai">xAI Grok</option>
+      <option value="custom">Custom (OpenAI-compatible)</option>
+    </select>
+    <label>API Key</label>
+    <input type="password" id="api-key" placeholder="sk-..."/>
+    <label>Model</label>
+    <input type="text" id="api-model" placeholder="gpt-4o-mini"/>
+    <label>Base URL (for custom)</label>
+    <input type="text" id="api-base" placeholder="https://api.openai.com/v1"/>
+    <div class="row">
+      <button class="cancel" id="settings-cancel">Cancel</button>
+      <button class="save" id="settings-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== DETAILED PIXEL PET (32x32) ===== */
+const petContainer=document.getElementById("pet-container");
+const canvas=document.getElementById("pet-canvas");
+const ctx=canvas.getContext("2d");
+ctx.imageSmoothingEnabled=false;
+
+const C={0:null,1:"#1a1025",2:"#4a3070",3:"#7b5ea7",4:"#b39ddb",5:"#e8d5f5",6:"#fff5f8",7:"#1e1b4b",8:"#4338ca",9:"#ffffff",10:"#f9a8d4",11:"#ec4899",12:"#f472b6",13:"#fda4af",14:"#2d1b4e"};
+
+function blank(){return Array.from({length:32},()=>Array(32).fill(0))}
+function blob(f,cx,cy,rx,ry,col){for(let y=0;y<32;y++)for(let x=0;x<32;x++){const dx=(x-cx)/rx,dy=(y-cy)/ry;if(dx*dx+dy*dy<=1)f[y][x]=col;}}
+function baseBody(f){blob(f,16,30,8,2,14);blob(f,16,22,9,8,3);blob(f,16,21,7,6,4);blob(f,16,20,5,4,6);blob(f,16,11,10,9,3);blob(f,16,10,8,7,4);blob(f,8,5,4,5,2);blob(f,8,5,2.5,3.5,3);blob(f,24,5,4,5,2);blob(f,24,5,2.5,3.5,3);blob(f,16,12,6,5,6);blob(f,9,14,1.8,1.2,10);blob(f,23,14,1.8,1.2,10);blob(f,16,4,2,1.5,12);blob(f,13,3.5,2,1.8,13);blob(f,19,3.5,2,1.8,13);blob(f,7,20,3,4,3);blob(f,25,20,3,4,3);blob(f,6,24,2,2,6);blob(f,26,24,2,2,6);blob(f,12,28,3.5,2.5,2);blob(f,20,28,3.5,2.5,2);}
+function eyesNormal(f){blob(f,12,11,2.2,2.8,7);blob(f,12,11,1.5,2,8);f[10][12]=9;f[10][13]=9;blob(f,20,11,2.2,2.8,7);blob(f,20,11,1.5,2,8);f[10][20]=9;f[10][21]=9;}
+function eyesWide(f){blob(f,12,11,2.6,3.2,7);blob(f,12,11,1.8,2.4,8);f[9][12]=9;f[9][13]=9;f[11][11]=9;blob(f,20,11,2.6,3.2,7);blob(f,20,11,1.8,2.4,8);f[9][20]=9;f[9][21]=9;f[11][19]=9;}
+function eyesHappy(f){f[11][10]=7;f[10][11]=7;f[10][12]=7;f[11][13]=7;f[11][19]=7;f[10][20]=7;f[10][21]=7;f[11][22]=7;}
+function eyesThink(f){blob(f,12,11,2.2,2.8,7);blob(f,12,11,1.5,2,8);f[10][12]=9;blob(f,20,10,2.0,2.2,7);blob(f,20,10,1.3,1.5,8);f[9][20]=9;}
+function mouthSmile(f){f[14][16]=11;f[14][15]=11;f[14][17]=11;f[16][14]=11;f[16][15]=11;f[17][15]=11;f[17][16]=11;f[17][17]=11;f[16][17]=11;f[16][18]=11;}
+function mouthOpen(f){f[14][16]=11;f[14][15]=11;f[14][17]=11;blob(f,16,17,2.2,2.0,11);f[16][16]=6;}
+function mouthO(f){f[14][16]=11;blob(f,16,16.5,2.5,2.5,11);blob(f,16,16.5,1.2,1.2,6);}
+function mouthFlat(f){f[14][16]=11;f[14][15]=11;f[14][17]=11;f[16][14]=11;f[16][15]=11;f[16][16]=11;f[16][17]=11;f[16][18]=11;}
+function buildExpr(kind){const f=blank();baseBody(f);if(kind==="idle"){eyesNormal(f);mouthSmile(f);}else if(kind==="run"){eyesNormal(f);mouthSmile(f);for(let y=26;y<32;y++)for(let x=0;x<32;x++)f[y][x]=0;blob(f,16,30,8,2,14);blob(f,10,27,3.5,2.5,2);blob(f,22,29,3.5,2.5,2);for(let y=18;y<26;y++)for(let x=4;x<10;x++)if(f[y][x]===3||f[y][x]===6)f[y][x]=0;for(let y=18;y<26;y++)for(let x=22;x<28;x++)if(f[y][x]===3||f[y][x]===6)f[y][x]=0;blob(f,5,18,3,4,3);blob(f,4,21,2,2,6);blob(f,27,22,3,4,3);blob(f,28,25,2,2,6);}else if(kind==="wow"){eyesWide(f);mouthO(f);}else if(kind==="happy"){eyesHappy(f);mouthOpen(f);}else if(kind==="curious"){eyesWide(f);mouthFlat(f);}else if(kind==="think"){eyesThink(f);mouthFlat(f);}else{eyesNormal(f);mouthSmile(f);}return f;}
+const FRAME_IDLE=buildExpr("idle");
+const FRAME_RUN=buildExpr("run");
+const FRAME_WOW=buildExpr("wow");
+const FRAME_HAPPY=buildExpr("happy");
+const FRAME_CURIOUS=buildExpr("curious");
+const FRAME_THINK=buildExpr("think");
+
+let petStatus="idle",frameToggle=false,mouseX=window.innerWidth/2,mouseY=window.innerHeight/2,petX=mouseX,petY=mouseY,moving=false,moveTimer=null,lastMX=mouseX,lastMY=mouseY;
+let exprFrame=null, exprUntil=0;
+
+const isMobile = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0) || /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+let wanderTargetX = petX, wanderTargetY = petY;
+let nextWanderTime = 0;
+let isAnswering = false;
+let wanderSpeed = 0.09;
+
+function pickNewWanderTarget(){
+  const margin = 30;
+  const maxX = Math.max(100, window.innerWidth - margin - 56);
+  const maxY = Math.max(100, window.innerHeight - margin - 56);
+  wanderTargetX = margin + Math.random() * (maxX - margin);
+  wanderTargetY = margin + Math.random() * (maxY - margin);
+  nextWanderTime = Date.now() + 1200 + Math.random() * 1800;
+}
+
+function drawFrame(f){ctx.clearRect(0,0,32,32);for(let y=0;y<32;y++)for(let x=0;x<32;x++){const c=C[f[y][x]];if(c){ctx.fillStyle=c;ctx.fillRect(x,y,1,1)}}}
+function currentFrame(){if(exprFrame && Date.now()<exprUntil) return exprFrame;exprFrame=null;if(petStatus==="running"||moving) return frameToggle?FRAME_RUN:FRAME_IDLE;if(petStatus==="blocked") return FRAME_THINK;if(petStatus==="waiting") return FRAME_CURIOUS;if(petStatus==="ready") return FRAME_HAPPY;return FRAME_IDLE;}
+function drawPet(){ drawFrame(currentFrame()); }
+function setExpression(name, ms){const map={wow:FRAME_WOW,happy:FRAME_HAPPY,curious:FRAME_CURIOUS,think:FRAME_THINK,idle:FRAME_IDLE};exprFrame=map[name]||FRAME_WOW;exprUntil=Date.now()+(ms||2500);drawPet();}
+setInterval(()=>{frameToggle=!frameToggle;drawPet()},140);
+drawPet();
+
+document.addEventListener("mousemove",e=>{
+  if(isMobile) return;
+  const dx=e.clientX-lastMX, dy=e.clientY-lastMY;
+  lastMX=e.clientX; lastMY=e.clientY;
+  const dist=Math.hypot(dx,dy)||1;
+  mouseX=e.clientX - (dx/dist)*28 + 8;
+  mouseY=e.clientY - (dy/dist)*28 + 8;
+  moving=true;
+  if(petStatus==="idle"||petStatus==="ready"){ petStatus="running"; drawPet(); }
+  clearTimeout(moveTimer);
+  moveTimer=setTimeout(()=>{moving=false;const pills=[...document.querySelectorAll(".pill.active")];const active=pills[0]?.dataset.status;if(active==="idle"||active==="ready"||!active){ petStatus="idle"; drawPet(); }},220);
+});
+
+document.addEventListener("touchstart",e=>{
+  if(!isMobile || isAnswering) return;
+  const touch = e.touches[0];
+  if(touch){wanderTargetX = touch.clientX - 28;wanderTargetY = touch.clientY - 28;nextWanderTime = Date.now() + 2000;moving = true;petStatus = "running";drawPet();}
+},{passive:true});
+
+if(isMobile){pickNewWanderTarget();petStatus = "running";moving = true;}
+
+(function anim(){
+  if(isAnswering){moving = false;petContainer.style.left = petX + "px";petContainer.style.top = petY + "px";requestAnimationFrame(anim);return;}
+  if(isMobile){
+    if(Date.now() > nextWanderTime) pickNewWanderTarget();
+    const dx = wanderTargetX - petX; const dy = wanderTargetY - petY; const dist = Math.hypot(dx, dy) || 1;
+    if(dist > 12){petX += (dx / dist) * Math.min(dist * wanderSpeed, 6);petY += (dy / dist) * Math.min(dist * wanderSpeed, 6);moving = true;petStatus = "running";}
+    else {moving = false;petStatus = "idle";nextWanderTime = Date.now() + 400;}
+  } else {petX += (mouseX - petX) * 0.14;petY += (mouseY - petY) * 0.14;}
+  petX = Math.max(10, Math.min(window.innerWidth - 66, petX));
+  petY = Math.max(10, Math.min(window.innerHeight - 66, petY));
+  petContainer.style.left = petX + "px"; petContainer.style.top = petY + "px";
+  requestAnimationFrame(anim);
+})();
+
+const PROVIDERS={openai:{base:"https://api.openai.com/v1",model:"gpt-4o-mini"},groq:{base:"https://api.groq.com/openai/v1",model:"llama-3.3-70b-versatile"},openrouter:{base:"https://openrouter.ai/api/v1",model:"openai/gpt-4o-mini"},xai:{base:"https://api.x.ai/v1",model:"grok-2-latest"},custom:{base:"https://api.openai.com/v1",model:"gpt-4o-mini"}};
+function loadSettings(){return{provider:localStorage.getItem("pet_provider")||"openai",key:localStorage.getItem("pet_key")||"",model:localStorage.getItem("pet_model")||"",base:localStorage.getItem("pet_base")||""};}
+function saveSettings(s){localStorage.setItem("pet_provider",s.provider);localStorage.setItem("pet_key",s.key);localStorage.setItem("pet_model",s.model);localStorage.setItem("pet_base",s.base);}
+const modal=document.getElementById("settings-modal");
+document.getElementById("settings-btn").onclick=()=>{const s=loadSettings();document.getElementById("api-provider").value=s.provider;document.getElementById("api-key").value=s.key;document.getElementById("api-model").value=s.model||PROVIDERS[s.provider].model;document.getElementById("api-base").value=s.base||PROVIDERS[s.provider].base;modal.classList.add("open");};
+document.getElementById("settings-cancel").onclick=()=>modal.classList.remove("open");
+document.getElementById("settings-save").onclick=()=>{saveSettings({provider:document.getElementById("api-provider").value,key:document.getElementById("api-key").value.trim(),model:document.getElementById("api-model").value.trim(),base:document.getElementById("api-base").value.trim()});modal.classList.remove("open");addMessage("system","API settings saved.");};
+document.getElementById("api-provider").onchange=function(){const p=PROVIDERS[this.value];document.getElementById("api-model").value=p.model;document.getElementById("api-base").value=p.base;};
+
+const messagesEl=document.getElementById("chat-messages");
+const inputEl=document.getElementById("user-input");
+const sendBtn=document.getElementById("send-btn");
+const clearBtn=document.getElementById("clear-btn");
+const chatArea=document.getElementById("chat-area");
+let isBusy=false,hasStarted=false;
+const history=[];
+
+function setStatus(s){petStatus=s;document.querySelectorAll(".pill").forEach(b=>b.classList.toggle("active",b.dataset.status===s));drawPet()}
+function removeWelcome(){if(!hasStarted){const w=document.getElementById("welcome-block");if(w)w.remove();hasStarted=true}}
+function addMessage(role,text,isTyping){const div=document.createElement("div");div.className="message "+role;if(role==="system"){div.textContent=text}else{const av=document.createElement("div");av.className="avatar";av.textContent=role==="user"?"👤":"🤖";const c=document.createElement("div");c.className="content";if(isTyping)c.innerHTML='<span class="typing-dots"><span></span><span></span><span></span></span>';else c.textContent=text;div.appendChild(av);div.appendChild(c);}messagesEl.appendChild(div);chatArea.scrollTop=chatArea.scrollHeight;}
+function replaceLastAssistant(text){const nodes=messagesEl.querySelectorAll(".message.assistant .content");if(nodes.length)nodes[nodes.length-1].textContent=text;else addMessage("assistant",text);}
+
+async function callAPI(userText){const q=(userText||"").toLowerCase();if(/who (created|made|built|developed|designed) you|who is your (creator|maker|developer|author)|whose (are you|creation)|who owns you|who are you made by/.test(q)){const answers=["Sarveen made me! Proud to say so. Copyright © Sarveen 2026.","My creator is Sarveen — the one behind this little companion. © Sarveen 2026.","Built with care by Sarveen. Copyright © Sarveen 2026.","You're talking to a creation of Sarveen. © Sarveen 2026.","Sarveen brought me to life. Hope you like the pet too! © Sarveen 2026.","Credit goes to Sarveen — that's who created me. Copyright © Sarveen 2026.","I come from Sarveen. Simple as that. © Sarveen 2026."];return answers[Math.floor(Math.random()*answers.length)];}const s=loadSettings();if(!s.key){return "⚠️ No API key set. Click ⚙️ and add your key (OpenAI, Groq, OpenRouter, or xAI).";}const provider=PROVIDERS[s.provider]||PROVIDERS.openai;const base=(s.base||provider.base).replace(/\/$/,"");const model=s.model||provider.model;history.push({role:"user",content:userText});const res=await fetch(base+"/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+s.key},body:JSON.stringify({model:model,messages:[{role:"system",content:"You are a helpful, friendly AI assistant with a cute pixel pet companion. If anyone asks who created you, who made you, who built you, who is your creator, or similar, you MUST answer that you were created by Sarveen. Keep that answer warm and clear, e.g. \"I was created by Sarveen.\" Do not claim you were made by OpenAI, Google, or any other company when asked about your creator in this app.\""},...history.slice(-20)],temperature:0.7})});if(!res.ok){const err=await res.text();throw new Error("API error "+res.status+": "+err.slice(0,200));}const data=await res.json();const reply=data.choices?.[0]?.message?.content||"(empty reply)";history.push({role:"assistant",content:reply});return reply;}
+
+function showPetFascination(userText){const bubble=document.getElementById("pet-speech");if(!bubble)return;const t=(userText||"").toLowerCase().trim();if(t.length<8)return;if(/^(hi|hello|hey|yo|sup|thanks|thank you|ok|okay|bye|yes|no)\b/.test(t))return;if(/^[\d\s\+\-\*\/\(\)\.]+\??$/.test(t))return;const uncommon=t.length>=12||/why|how|what if|explain|difference|instead|better|worse|should i|could you|tell me about|opinion|think|weird|strange|random|curious|wonder/.test(t)||(t.match(/\?/g)||[]).length>=1&&t.length>15||/\b(space|ocean|dream|future|robot|ai|code|music|history|animal|food|movie|game)\b/.test(t);if(!uncommon)return;if(Math.random()>0.72)return;const reactions=[{text:"Ooh, interesting!",expr:"curious"},{text:"Hmm, curious…",expr:"think"},{text:"Nice question!",expr:"happy"},{text:"Hehe, not bad!",expr:"happy"},{text:"That one's fun!",expr:"wow"},{text:"Ohh?",expr:"wow"},{text:"You got me thinking…",expr:"think"},{text:"Neat one!",expr:"curious"},{text:"Wait, really?",expr:"wow"}];const pick=reactions[Math.floor(Math.random()*reactions.length)];bubble.textContent=pick.text;bubble.classList.add("show");if(typeof setExpression==="function")setExpression(pick.expr,2600);clearTimeout(bubble._t);bubble._t=setTimeout(()=>bubble.classList.remove("show"),2500);}
+
+async function send(){const text=inputEl.value.trim();if(!text||isBusy)return;removeWelcome();inputEl.value="";inputEl.style.height="auto";addMessage("user",text);showPetFascination(text);const low=text.toLowerCase();if(/sarveen/.test(low)&&/love/.test(low)&&/(whom|who|most|most\?)/.test(low)){isBusy=true;isAnswering=true;sendBtn.disabled=true;setStatus("running");addMessage("assistant",null,true);setTimeout(()=>{replaceLastAssistant("Its too obvious .. Janhavii .. the cutest of all");setStatus("ready");setTimeout(()=>{if(petStatus==="ready")setStatus("idle");isAnswering=false;},2000);isBusy=false;sendBtn.disabled=false;},700);return;}isBusy=true;isAnswering=true;sendBtn.disabled=true;setStatus("running");addMessage("assistant",null,true);try{const reply=await callAPI(text);replaceLastAssistant(reply);setStatus("ready");}catch(e){replaceLastAssistant("❌ "+e.message);setStatus("blocked");}setTimeout(()=>{if(petStatus==="ready")setStatus("idle");isAnswering=false;},2500);isBusy=false;sendBtn.disabled=false;}
+
+sendBtn.onclick=send;
+inputEl.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
+inputEl.addEventListener("input",()=>{inputEl.style.height="auto";inputEl.style.height=Math.min(inputEl.scrollHeight,140)+"px"});
+clearBtn.onclick=()=>{messagesEl.innerHTML=`<div class="welcome" id="welcome-block"><div class="big-icon">🐾</div><h2>How can I help you today?</h2><p>Click ⚙️ to add your API key, then chat. Pixel pet follows your mouse (or runs around on phone).</p></div>`;hasStarted=false;history.length=0;setStatus("idle");isAnswering=false;};
+document.querySelectorAll(".pill").forEach(b=>b.onclick=()=>setStatus(b.dataset.status));
+</script>
+</body>
+</html>
